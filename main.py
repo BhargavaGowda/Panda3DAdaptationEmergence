@@ -38,22 +38,25 @@ class Sim(ShowBase):
         self.render.setLight(dlnp)
 
         self.setUpStadium()
-        self.setUpPucks(5)
+        self.puckList=[]
+        self.setUpPucks(5,self.puckList)
+        
 
        
 
-    def setUpPucks(self,num):
+    def setUpPucks(self,num,puckList):
         for i in range(num): 
-            testPuck = Puck.makePuck(self.loader.loadModel("models/puckDS.bam"))
+            testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
             self.render.attachNewNode(testPuck.bodyNP.node())
-            self.world.attachRigidBody(testPuck.mainBodyNP.node())
-            self.world.attachRigidBody(testPuck.leftWheelNP.node())
-            self.world.attachRigidBody(testPuck.rightWheelNP.node())
-            self.world.attachConstraint(testPuck.leftWheelConstraint)
-            self.world.attachConstraint(testPuck.rightWheelConstraint)
-            testPuck.leftWheelConstraint.enableAngularMotor(True,4,10)
-            testPuck.rightWheelConstraint.enableAngularMotor(True,-4,10)
-            testPuck.setPos(i*2,i*2,0)
+            testPuck.setPos(i,i*2,0)
+            testbox1 = self.loader.loadModel("models/box.egg")
+            testbox1.reparentTo(testPuck.ds1)
+            testbox1.setColor(1,0,0,1)
+            testbox2 = self.loader.loadModel("models/box.egg")
+            testbox2.reparentTo(testPuck.ds2)
+            testbox2.setColor(1,0,0,1)
+            puckList.append(testPuck)
+
         
         
     
@@ -74,12 +77,23 @@ class Sim(ShowBase):
 
     def update(self,task):
         dt = globalClock.getDt()
-        if(dt>1/130):
-            self.simsteps-=1
-        elif(dt<1/140):
-            self.simsteps+=1
-        for i in range(self.simsteps):
-            self.world.doPhysics(self.timestep)
+        # if(dt>1/130):
+        #     self.simsteps-=1
+        # elif(dt<1/140):
+        #     self.simsteps+=1
+        for i in range(3):
+            for puck in self.puckList:
+                sensorPos=puck.sensorBodyNP.getPos(self.render)
+                ds1Pos = puck.ds1.getPos(self.render)
+                ds2Pos = puck.ds2.getPos(self.render)
+                ds1Hit = 1-self.world.rayTestClosest(sensorPos,ds1Pos).getHitFraction()
+                ds2Hit = 1-self.world.rayTestClosest(sensorPos,ds2Pos).getHitFraction()
+                puck.runPuck([ds1Hit,ds2Hit])
+
+
+                
+
+            self.world.doPhysics(dt)
         return task.cont
 
 
