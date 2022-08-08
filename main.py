@@ -21,13 +21,14 @@ class Sim(ShowBase):
         self.setFrameRateMeter(True)
         self.simsteps = 10
         self.timestep = 0.016
+        self.timer1 = 0
 
         self.world = bl.BulletWorld()
         self.world.setGravity(Vec3(0, 0, -9.81))
         self.world.setDebugNode(debugNP.node())
         self.taskMgr.add(self.update,"update")
 
-        self.cam.setPos(0,-15,15)
+        self.cam.setPos(0,-60,45)
         self.cam.lookAt(0,0,0)
 
         dlight = DirectionalLight('sun')
@@ -40,6 +41,10 @@ class Sim(ShowBase):
         self.setUpStadium()
         self.puckList=[]
         self.setUpPucks(5,self.puckList)
+
+        self.goalBox = self.setUpGoal()
+        self.world.attachRigidBody(self.goalBox.node())
+        self.goalBox.setPos(15,15,1)
         
 
        
@@ -48,7 +53,7 @@ class Sim(ShowBase):
         for i in range(num): 
             testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
             self.render.attachNewNode(testPuck.bodyNP.node())
-            testPuck.setPos(i,i*2,0)
+            testPuck.setPos(i-15,i-15,0)
             testbox1 = self.loader.loadModel("models/box.egg")
             testbox1.reparentTo(testPuck.ds1)
             testbox1.setColor(1,0,0,1)
@@ -73,15 +78,25 @@ class Sim(ShowBase):
         stadiumRBNP.node().addShape(wallShape,TransformState.makePosHpr(Vec3(0,22.6,1),Vec3(90,0,0)))
         stadiumRBNP.node().addShape(wallShape,TransformState.makePosHpr(Vec3(0,-22.6,1),Vec3(90,0,0)))
         self.world.attachRigidBody(stadiumRBNP.node())
-        stadiumRBNP.setPos(0,0,-3)
+        stadiumRBNP.setPos(0,0,-1)
+
+    def setUpGoal(self):
+        goalBoxRBNP = self.render.attachNewNode(bl.BulletRigidBodyNode())
+        goalBoxRBNP.node().addShape(bl.BulletBoxShape(Vec3(0.5,0.5,0.5)))
+        goalBoxNP = self.loader.loadModel("models/box.egg")
+        goalBoxNP.setPos(goalBoxRBNP,-0.5,-0.5,-0.5)
+        goalBoxNP.setColor(200,0,0,1)
+        goalBoxNP.reparentTo(goalBoxRBNP)
+        return goalBoxRBNP
 
     def update(self,task):
         dt = globalClock.getDt()
-        # if(dt>1/130):
-        #     self.simsteps-=1
-        # elif(dt<1/140):
-        #     self.simsteps+=1
-        for i in range(3):
+        self.timer1 += dt
+        if(dt>1/20):
+            self.simsteps-=1
+        elif(dt<1/40):
+            self.simsteps+=1
+        for i in range(self.simsteps):
             for puck in self.puckList:
                 sensorPos=puck.sensorBodyNP.getPos(self.render)
                 ds1Pos = puck.ds1.getPos(self.render)
@@ -90,17 +105,30 @@ class Sim(ShowBase):
                 ds2Hit = 1-self.world.rayTestClosest(sensorPos,ds2Pos).getHitFraction()
                 puck.runPuck([ds1Hit,ds2Hit])
 
-
-                
-
-            self.world.doPhysics(dt)
+            self.world.doPhysics(self.timestep)
+        if(self.timer1>1):
+            self.timer1 = 0
+            print(self.simsteps)
         return task.cont
+
+    def evolvePucks(self):
+        self.puckList.sort(key=lambda x: (self.goalBox.getPos(self.render)-x.getPos(self.render)).length())
+        surviveNum = len(self.puckList)//2
+        newPuckList = []
+        for i in range(len(self.puckList)):
+            testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
+            self.render.attachNewNode(testPuck.bodyNP.node())
+            testPuck.setPos(i-15,i-15,0)
+            testbox1 = self.loader.loadModel("models/box.egg")
+            testbox1.reparentTo(testPuck.ds1)
+            testbox1.setColor(1,0,0,1)
+            testbox2 = self.loader.loadModel("models/box.egg")
+            testbox2.reparentTo(testPuck.ds2)
+            testbox2.setColor(1,0,0,1)
+            
+
 
 
     
-
-
-
-
 app = Sim()
 app.run()

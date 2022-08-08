@@ -1,4 +1,4 @@
-from matplotlib.transforms import Transform
+
 import panda3d.bullet as bl
 from panda3d.core import Vec3,TransformState,PandaNode
 from direct.showbase.Loader import Loader
@@ -73,8 +73,8 @@ class Puck:
             inputArray[i] = inputs[i]
         output = self.brain.step(inputArray)
         
-        self.leftWheelConstraint.enableAngularMotor(True,100*output[-2],100)
-        self.rightWheelConstraint.enableAngularMotor(True,100*output[-1],100)
+        self.leftWheelConstraint.enableAngularMotor(True,1000*output[-2],100)
+        self.rightWheelConstraint.enableAngularMotor(True,1000*output[-1],100)
 
 
 
