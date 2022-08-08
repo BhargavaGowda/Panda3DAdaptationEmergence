@@ -3,19 +3,22 @@ import numpy
 class CTRNN:
 
 
-    def __init__(self, size):
+    def __init__(self, size,weightRange=4,biasRange=2):
         self.size = size
         self.potentials = numpy.zeros(size)
         self.weights = (numpy.random.rand(size,size)-0.5)*0.01
         self.bias = (numpy.random.rand(size)-0.5)*0.01
         self.timescale = numpy.full(size,0.5)
+        self.weightRange = weightRange
+        self.biasRange = biasRange
         self.savedWeights = numpy.zeros((size,size))
         self.savedBias = numpy.zeros(size)
+        self.savedTimescale = numpy.full(size,0.5)
         numpy.copyto(self.savedWeights,self.weights)
         numpy.copyto(self.savedBias,self.bias)
-        self.weights += (numpy.random.rand(size,size)-0.5)*0.001
-        self.bias += (numpy.random.rand(size)-0.5)*0.001
-        self.radiation = 1
+        self.weights += ((numpy.random.rand(size)-0.5)*0.01).clip(-1*weightRange,weightRange)
+        self.bias += ((numpy.random.rand(size)-0.5)*0.01).clip(-1*biasRange,biasRange)
+        self.timescale +=((numpy.random.rand(size)-0.5)*0.01).clip(0,1)
         
 
 
@@ -36,43 +39,61 @@ class CTRNN:
         return self.potentials
 
     def sigmoid(self,inputVector):
-        return (1/(1+numpy.exp(-inputVector)))
+        return (1/(1+numpy.exp(-inputVector.clip(min=100))))
 
-
-    def adapt(self,improvement,improvementThreshold=0,mutationSize=0.001,radiationStrength=1.5):
+    def adapt(self,improvement,improvementThreshold=0.001,mutationSize=0.001):
         if(improvement>improvementThreshold):
-            # self.radiation = 1
             numpy.copyto(self.savedWeights,self.weights)
             numpy.copyto(self.savedBias,self.bias)
-            self.weights += (numpy.random.rand(self.size,self.size)-0.5)*mutationSize
-            self.bias += (numpy.random.rand(self.size)-0.5)*mutationSize
+            numpy.copyto(self.savedTimescale,self.timescale)
+            self.weights = (self.weights+(numpy.random.rand(self.size,self.size)-0.5)*mutationSize).clip(-1*self.weightRange,self.weightRange)
+            self.bias = (self.bias+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(-1*self.biasRange,self.biasRange)
+            self.timescale = (self.timescale+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(0,1)
         else:
-            self.weights = self.savedWeights + (numpy.random.rand(self.size,self.size)-0.5)*mutationSize#*self.radiation
-            self.bias = self.savedBias + (numpy.random.rand(self.size)-0.5)*mutationSize#*self.radiation
-            # self.radiation*=radiationStrength
-            # self.radiation = min(self.radiation,1000)
-        print("--")      
-        print(improvement)
-        # print(self.radiation)
+            self.weights = (self.savedWeights + (numpy.random.rand(self.size,self.size)-0.5)*mutationSize).clip(-1*self.weightRange,self.weightRange)
+            self.bias = (self.savedBias + (numpy.random.rand(self.size)-0.5)*mutationSize).clip(-1*self.biasRange,self.biasRange)
+            self.timescale = (self.savedTimescale + (numpy.random.rand(self.size)-0.5)*mutationSize).clip(0,1)
+
+    #single point crossover for weights, biases and timescale
+    @staticmethod
+    def recombine(brain1,brain2):
+
+        #not comprehensive
+        if(brain1.size != brain2.size or brain1.size<2):
+            raise("brain mismatch")
+
+        splitPoint = numpy.random.randint(1,brain1.size)
+        newWeights = numpy.concatenate((brain1.weights[:splitPoint],brain2.weights[splitPoint:]))
+        newBias = numpy.concatenate((brain1.bias[:splitPoint],brain2.bias[splitPoint:]))
+        newTimescale = numpy.concatenate((brain1.timescale[:splitPoint],brain2.timescale[splitPoint:]))
+
+        newBrain = CTRNN(brain1.size)
+        newBrain.weights=newWeights
+        newBrain.savedWeights=newWeights
+        newBrain.bias=newBias
+        newBrain.savedBias=newBias
+        newBrain.timescale=newTimescale
+        newBrain.savedTimescale=newTimescale
+        return newBrain
+
+    def mutate(self,mutationSize=0.1):
+        self.weights = (self.weights+(numpy.random.rand(self.size,self.size)-0.5)*mutationSize).clip(-1*self.weightRange,self.weightRange)
+        self.bias = (self.bias+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(-1*self.biasRange,self.biasRange)
+        self.timescale = (self.timescale+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(0,1)
+        numpy.copyto(self.savedWeights,self.weights)
+        numpy.copyto(self.savedBias,self.bias)
+        numpy.copyto(self.savedTimescale,self.timescale)
+        
 
 
 
 
 
+        
+        
+        
 
-    # def adapt(self,feedback,weightMut=3,biasMut=3,timeMut=0):
-    #     feedback = max(0,min(feedback,1))
-    #     #where to go
-    #     self.weightsTrajectory = self.weightsTrajectory*feedback + (1-feedback)*weightMut*(numpy.random.rand(self.size,self.size)-0.5)
-    #     self.biasTrajectory = self.biasTrajectory*feedback + (1-feedback)*biasMut*(numpy.random.rand(self.size)-0.5)
-    #     self.timescaleTrajectory = self.timescaleTrajectory*feedback + (1-feedback)*timeMut*(numpy.random.rand(self.size)-0.5)
-    #     #how quick to go there
-    #     self.weights += self.weightsTrajectory*self.weightLearnRate
-    #     self.bias += self.biasTrajectory*self.biasLearnRate
-    #     self.timescale += self.timescaleTrajectory*self.timescaleLearnRate
-    #     # print(self.weightsTrajectory)
-    #     # print(self.weights)
-    #     # print(self.biasTrajectory)
-    #     # print(self.bias)
-    #     # print(self.timescale)
+
+
+
 
