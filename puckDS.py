@@ -76,6 +76,19 @@ class Puck:
         self.leftWheelConstraint.enableAngularMotor(True,1000*output[-2],100)
         self.rightWheelConstraint.enableAngularMotor(True,1000*output[-1],100)
 
+    def destroyPuck(self):
+        self.world.remove(self.leftWheelNP.node())
+        self.world.remove(self.mainBodyNP.node())
+        self.world.remove(self.rightWheelNP.node())
+        self.world.remove(self.rightWheelConstraint)
+        self.world.remove(self.leftWheelConstraint)
+        self.leftWheelNP.removeNode()
+        self.rightWheelNP.removeNode()
+        self.sensorBodyNP.removeNode()
+        self.mainBodyNP.removeNode()
+        self.bodyNP.removeNode()
+        self.ds1.removeNode()
+        self.ds2.removeNode()
 
 
 

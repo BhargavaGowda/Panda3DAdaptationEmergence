@@ -76,7 +76,7 @@ class CTRNN:
         newBrain.savedTimescale=newTimescale
         return newBrain
 
-    def mutate(self,mutationSize=0.1):
+    def mutate(self,mutationSize=0.01):
         self.weights = (self.weights+(numpy.random.rand(self.size,self.size)-0.5)*mutationSize).clip(-1*self.weightRange,self.weightRange)
         self.bias = (self.bias+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(-1*self.biasRange,self.biasRange)
         self.timescale = (self.timescale+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(0,1)

@@ -1,8 +1,10 @@
+from random import randint, random, randrange
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 import panda3d.bullet as bl
 from panda3d.core import Vec3,DirectionalLight,TransformState
 import simplepbr
+from lib.PyCTRNN import CTRNN
 from puckDS import Puck
 
 
@@ -22,6 +24,8 @@ class Sim(ShowBase):
         self.simsteps = 10
         self.timestep = 0.016
         self.timer1 = 0
+        self.timerEvolve = 0
+        self.puckNum = 10
 
         self.world = bl.BulletWorld()
         self.world.setGravity(Vec3(0, 0, -9.81))
@@ -40,7 +44,7 @@ class Sim(ShowBase):
 
         self.setUpStadium()
         self.puckList=[]
-        self.setUpPucks(5,self.puckList)
+        self.setUpPucks(self.puckNum,self.puckList)
 
         self.goalBox = self.setUpGoal()
         self.world.attachRigidBody(self.goalBox.node())
@@ -53,7 +57,7 @@ class Sim(ShowBase):
         for i in range(num): 
             testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
             self.render.attachNewNode(testPuck.bodyNP.node())
-            testPuck.setPos(i-15,i-15,0)
+            testPuck.setPos(-1*i-10,i-15,0)
             testbox1 = self.loader.loadModel("models/box.egg")
             testbox1.reparentTo(testPuck.ds1)
             testbox1.setColor(1,0,0,1)
@@ -92,6 +96,7 @@ class Sim(ShowBase):
     def update(self,task):
         dt = globalClock.getDt()
         self.timer1 += dt
+        self.timerEvolve += self.simsteps*self.timestep
         if(dt>1/20):
             self.simsteps-=1
         elif(dt<1/40):
@@ -109,22 +114,38 @@ class Sim(ShowBase):
         if(self.timer1>1):
             self.timer1 = 0
             print(self.simsteps)
+
+        if(self.timerEvolve>60):
+            self.evolvePucks()
+            self.timerEvolve=0
+
         return task.cont
 
     def evolvePucks(self):
-        self.puckList.sort(key=lambda x: (self.goalBox.getPos(self.render)-x.getPos(self.render)).length())
+        self.puckList.sort(key=lambda x: (self.goalBox.getPos(self.render)-x.mainBodyNP.getPos(self.render)).length())
+        print((self.goalBox.getPos(self.render)-self.puckList[0].mainBodyNP.getPos(self.render)).length())
         surviveNum = len(self.puckList)//2
         newPuckList = []
         for i in range(len(self.puckList)):
+            newBrain = CTRNN.recombine(self.puckList[randrange(0,surviveNum)].brain,self.puckList[randrange(0,surviveNum)].brain)
+            newBrain.mutate()
             testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
             self.render.attachNewNode(testPuck.bodyNP.node())
-            testPuck.setPos(i-15,i-15,0)
+            testPuck.setPos(-1*i-10,i-15,0)
             testbox1 = self.loader.loadModel("models/box.egg")
             testbox1.reparentTo(testPuck.ds1)
             testbox1.setColor(1,0,0,1)
             testbox2 = self.loader.loadModel("models/box.egg")
             testbox2.reparentTo(testPuck.ds2)
             testbox2.setColor(1,0,0,1)
+            testPuck.brain = newBrain
+            newPuckList.append(testPuck)
+
+        for oldPuck in self.puckList:
+            oldPuck.destroyPuck()
+           
+        
+        self.puckList = newPuckList
             
 
 
