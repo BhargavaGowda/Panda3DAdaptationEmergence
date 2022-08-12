@@ -6,8 +6,8 @@ class CTRNN:
     def __init__(self, size,weightRange=4,biasRange=2):
         self.size = size
         self.potentials = numpy.zeros(size)
-        self.weights = (numpy.random.rand(size,size)-0.5)*0.01
-        self.bias = (numpy.random.rand(size)-0.5)*0.01
+        self.weights = (numpy.random.rand(size,size)-0.5)
+        self.bias = (numpy.random.rand(size)-0.5)
         self.timescale = numpy.full(size,0.5)
         self.weightRange = weightRange
         self.biasRange = biasRange

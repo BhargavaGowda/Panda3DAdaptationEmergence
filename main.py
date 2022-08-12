@@ -55,7 +55,7 @@ class Sim(ShowBase):
 
     def setUpPucks(self,num,puckList):
         for i in range(num): 
-            testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
+            testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"),brainSize=6)
             self.render.attachNewNode(testPuck.bodyNP.node())
             testPuck.setPos(-1*i-10,i-15,0)
             testbox1 = self.loader.loadModel("models/box.egg")
@@ -97,6 +97,7 @@ class Sim(ShowBase):
         dt = globalClock.getDt()
         self.timer1 += dt
         self.timerEvolve += self.simsteps*self.timestep
+        # self.timerEvolve += dt
         if(dt>1/20):
             self.simsteps-=1
         elif(dt<1/40):
@@ -123,12 +124,12 @@ class Sim(ShowBase):
 
     def evolvePucks(self):
         self.puckList.sort(key=lambda x: (self.goalBox.getPos(self.render)-x.mainBodyNP.getPos(self.render)).length())
-        print((self.goalBox.getPos(self.render)-self.puckList[0].mainBodyNP.getPos(self.render)).length())
+        print(list((self.goalBox.getPos(self.render)-i.mainBodyNP.getPos(self.render)).length() for i in self.puckList))
         surviveNum = len(self.puckList)//2
         newPuckList = []
         for i in range(len(self.puckList)):
             newBrain = CTRNN.recombine(self.puckList[randrange(0,surviveNum)].brain,self.puckList[randrange(0,surviveNum)].brain)
-            newBrain.mutate()
+            newBrain.mutate(mutationSize=0.1)
             testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
             self.render.attachNewNode(testPuck.bodyNP.node())
             testPuck.setPos(-1*i-10,i-15,0)

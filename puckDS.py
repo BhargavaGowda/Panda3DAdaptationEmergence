@@ -21,9 +21,9 @@ class Puck:
         self.sensorBodyNP.reparentTo(self.mainBodyNP)
         self.mainBodyNP.reparentTo(self.bodyNP)
         self.leftWheelConstraint = bl.BulletHingeConstraint(self.leftWheelNP.node(),self.mainBodyNP.node(),
-        Vec3(0,0,0),Vec3(-0.54,0,-0.05),Vec3(0,0,0),Vec3(-1,0,0))
+        Vec3(0,0,0),Vec3(-0.54,0,-0.01),Vec3(0,0,0),Vec3(-1,0,0))
         self.rightWheelConstraint = bl.BulletHingeConstraint(self.rightWheelNP.node(),self.mainBodyNP.node(),
-        Vec3(0,0,0),Vec3(0.54,0,-0.05),Vec3(0,0,0),Vec3(1,0,0))
+        Vec3(0,0,0),Vec3(0.54,0,-0.01),Vec3(0,0,0),Vec3(1,0,0))
         self.world.attachRigidBody(self.mainBodyNP.node())
         self.world.attachRigidBody(self.leftWheelNP.node())
         self.world.attachRigidBody(self.rightWheelNP.node())
@@ -47,8 +47,8 @@ class Puck:
 
     def setPos(self,x,y,z):
         self.mainBodyNP.setPos(x,y,z)
-        self.leftWheelNP.setPos(self.mainBodyNP,-0.54,0,-0.05)
-        self.rightWheelNP.setPos(self.mainBodyNP,0.54,0,-0.05)
+        self.leftWheelNP.setPos(self.mainBodyNP,-0.54,0,-0.01)
+        self.rightWheelNP.setPos(self.mainBodyNP,0.54,0,-0.01)
 
     def runPuck(self,inputs):
         # print(inputs)
@@ -73,8 +73,8 @@ class Puck:
             inputArray[i] = inputs[i]
         output = self.brain.step(inputArray)
         
-        self.leftWheelConstraint.enableAngularMotor(True,1000*output[-2],100)
-        self.rightWheelConstraint.enableAngularMotor(True,1000*output[-1],100)
+        self.leftWheelConstraint.enableAngularMotor(True,10*output[-2],100)
+        self.rightWheelConstraint.enableAngularMotor(True,10*output[-1],100)
 
     def destroyPuck(self):
         self.world.remove(self.leftWheelNP.node())
