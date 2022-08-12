@@ -56,7 +56,7 @@ class Sim(ShowBase):
 
     def setUpPucks(self,num,puckList):
         for i in range(num): 
-            testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
+            testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"),brainSize=6)
             self.render.attachNewNode(testPuck.bodyNP.node())
             testPuck.setPos(-1*i-5,i-15,0)
             testbox1 = self.loader.loadModel("models/box.egg")
@@ -99,6 +99,7 @@ class Sim(ShowBase):
         dt = globalClock.getDt()
         self.timer1 += dt
         self.timerEvolve += self.simsteps*self.timestep
+        # self.timerEvolve += dt
         if(dt>1/20):
             self.simsteps-=1
         elif(dt<1/40):
@@ -131,11 +132,10 @@ class Sim(ShowBase):
         # print(avgPos)
         for i in range(4):
             newBrain = CTRNN.recombine(self.puckList[randrange(0,surviveNum)].brain,self.puckList[randrange(0,surviveNum)].brain)
-            newBrain.mutate()
+            newBrain.mutate(mutationSize=0.1)
             testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
             self.render.attachNewNode(testPuck.bodyNP.node())
-            # pos = avgPos + Vec3(-1*i,i,0)
-            # testPuck.setPosRel(self.render,pos.get_x(),pos.get_y(),2)
+            testPuck.setPos(-1*i-10,i-15,0)
             testbox1 = self.loader.loadModel("models/box.egg")
             testbox1.reparentTo(testPuck.ds1)
             testbox1.setColor(1,0,0,1)
