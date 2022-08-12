@@ -50,6 +50,11 @@ class Puck:
         self.leftWheelNP.setPos(self.mainBodyNP,-0.54,0,-0.05)
         self.rightWheelNP.setPos(self.mainBodyNP,0.54,0,-0.05)
 
+    def setPosRel(self,render,x,y,z):
+        self.mainBodyNP.setPos(render,x,y,z)
+        self.leftWheelNP.setPos(self.mainBodyNP,-0.54,0,-0.05)
+        self.rightWheelNP.setPos(self.mainBodyNP,0.54,0,-0.05)
+
     def runPuck(self,inputs):
         # print(inputs)
 

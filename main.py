@@ -1,3 +1,4 @@
+
 from random import randint, random, randrange
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
@@ -25,7 +26,7 @@ class Sim(ShowBase):
         self.timestep = 0.016
         self.timer1 = 0
         self.timerEvolve = 0
-        self.puckNum = 10
+        self.puckNum = 14
 
         self.world = bl.BulletWorld()
         self.world.setGravity(Vec3(0, 0, -9.81))
@@ -57,7 +58,7 @@ class Sim(ShowBase):
         for i in range(num): 
             testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
             self.render.attachNewNode(testPuck.bodyNP.node())
-            testPuck.setPos(-1*i-10,i-15,0)
+            testPuck.setPos(-1*i-5,i-15,0)
             testbox1 = self.loader.loadModel("models/box.egg")
             testbox1.reparentTo(testPuck.ds1)
             testbox1.setColor(1,0,0,1)
@@ -87,6 +88,7 @@ class Sim(ShowBase):
     def setUpGoal(self):
         goalBoxRBNP = self.render.attachNewNode(bl.BulletRigidBodyNode())
         goalBoxRBNP.node().addShape(bl.BulletBoxShape(Vec3(0.5,0.5,0.5)))
+        goalBoxRBNP.node().setMass(2)
         goalBoxNP = self.loader.loadModel("models/box.egg")
         goalBoxNP.setPos(goalBoxRBNP,-0.5,-0.5,-0.5)
         goalBoxNP.setColor(200,0,0,1)
@@ -124,14 +126,16 @@ class Sim(ShowBase):
     def evolvePucks(self):
         self.puckList.sort(key=lambda x: (self.goalBox.getPos(self.render)-x.mainBodyNP.getPos(self.render)).length())
         print((self.goalBox.getPos(self.render)-self.puckList[0].mainBodyNP.getPos(self.render)).length())
-        surviveNum = len(self.puckList)//2
-        newPuckList = []
-        for i in range(len(self.puckList)):
+        surviveNum = len(self.puckList)-4
+        # avgPos = self.puckList[surviveNum-1].mainBodyNP.getPos(self.render)+(self.puckList[0].mainBodyNP.getPos(self.render)-self.puckList[surviveNum-1].mainBodyNP.getPos(self.render))/2
+        # print(avgPos)
+        for i in range(4):
             newBrain = CTRNN.recombine(self.puckList[randrange(0,surviveNum)].brain,self.puckList[randrange(0,surviveNum)].brain)
             newBrain.mutate()
             testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
             self.render.attachNewNode(testPuck.bodyNP.node())
-            testPuck.setPos(-1*i-10,i-15,0)
+            # pos = avgPos + Vec3(-1*i,i,0)
+            # testPuck.setPosRel(self.render,pos.get_x(),pos.get_y(),2)
             testbox1 = self.loader.loadModel("models/box.egg")
             testbox1.reparentTo(testPuck.ds1)
             testbox1.setColor(1,0,0,1)
@@ -139,13 +143,14 @@ class Sim(ShowBase):
             testbox2.reparentTo(testPuck.ds2)
             testbox2.setColor(1,0,0,1)
             testPuck.brain = newBrain
-            newPuckList.append(testPuck)
+            changePoint = surviveNum+i
+            self.puckList[changePoint].destroyPuck()
+            self.puckList[changePoint]=testPuck
 
-        for oldPuck in self.puckList:
-            oldPuck.destroyPuck()
-           
-        
-        self.puckList = newPuckList
+        for i in range(len(self.puckList)):
+            self.puckList[i].setPos(-1*i-5,i-15,0)
+
+
             
 
 
