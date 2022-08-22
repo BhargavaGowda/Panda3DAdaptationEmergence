@@ -1,5 +1,5 @@
 
-from random import randint, random, randrange
+from random import randrange
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 import panda3d.bullet as bl
