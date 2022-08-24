@@ -9,6 +9,7 @@ class CTRNN:
         self.weights = (numpy.random.rand(size,size)-0.5)
         self.bias = (numpy.random.rand(size)-0.5)
         self.timescale = numpy.full(size,0.5)
+        self.mask = numpy.full((size,size),1)
         self.weightRange = weightRange
         self.biasRange = biasRange
         self.savedWeights = numpy.zeros((size,size))
@@ -19,6 +20,7 @@ class CTRNN:
         self.weights += ((numpy.random.rand(size)-0.5)*0.01).clip(-1*weightRange,weightRange)
         self.bias += ((numpy.random.rand(size)-0.5)*0.01).clip(-1*biasRange,biasRange)
         self.timescale +=((numpy.random.rand(size)-0.5)*0.01).clip(0,1)
+        self.applyMask()
         
 
 
@@ -37,6 +39,9 @@ class CTRNN:
     def step(self, inputArray):
         self.potentials += self.timescale*(inputArray - self.potentials + numpy.matmul(self.weights, self.sigmoid(self.potentials+self.bias)))
         return self.potentials
+
+    def applyMask(self):
+        self.weights = self.weights*self.mask
 
     def sigmoid(self,inputVector):
         return (1/(1+numpy.exp(-inputVector.clip(min=100))))
@@ -68,21 +73,25 @@ class CTRNN:
         newTimescale = numpy.concatenate((brain1.timescale[:splitPoint],brain2.timescale[splitPoint:]))
 
         newBrain = CTRNN(brain1.size)
+        numpy.copyto(newBrain.mask,brain1.mask)
         newBrain.weights=newWeights
         newBrain.savedWeights=newWeights
         newBrain.bias=newBias
         newBrain.savedBias=newBias
         newBrain.timescale=newTimescale
         newBrain.savedTimescale=newTimescale
+        newBrain.applyMask()
         return newBrain
 
     def mutate(self,mutationSize=0.01):
         self.weights = (self.weights+(numpy.random.rand(self.size,self.size)-0.5)*mutationSize).clip(-1*self.weightRange,self.weightRange)
         self.bias = (self.bias+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(-1*self.biasRange,self.biasRange)
         self.timescale = (self.timescale+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(0,1)
+        self.applyMask()
         numpy.copyto(self.savedWeights,self.weights)
         numpy.copyto(self.savedBias,self.bias)
         numpy.copyto(self.savedTimescale,self.timescale)
+
         
 
 
