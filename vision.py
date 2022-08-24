@@ -2,10 +2,12 @@ import random
 from lib.SimBase import SimBase
 import panda3d.bullet as bl
 from direct.showbase.ShowBaseGlobal import globalClock
-from panda3d.core import Vec3,DirectionalLight,CardMaker,PerspectiveLens
+from panda3d.core import Vec3,DirectionalLight,CardMaker,PerspectiveLens,ConfigVariableBool
 import numpy as np
 import cv2
 from lib.PyCTRNN import CTRNN
+
+vsync = ConfigVariableBool("sync-video",False)
 
 class VisionSim(SimBase):
 
