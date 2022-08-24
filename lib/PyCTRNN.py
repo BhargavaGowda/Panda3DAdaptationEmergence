@@ -9,7 +9,7 @@ class CTRNN:
         self.weights = (numpy.random.rand(size,size)-0.5)
         self.bias = (numpy.random.rand(size)-0.5)
         self.timescale = numpy.full(size,0.5)
-        self.mask = numpy.full((size,size),1)
+        self.mask = numpy.full((size,size),1.0)
         self.weightRange = weightRange
         self.biasRange = biasRange
         self.savedWeights = numpy.zeros((size,size))

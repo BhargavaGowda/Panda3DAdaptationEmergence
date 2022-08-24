@@ -29,21 +29,21 @@ class VisionSim(SimBase):
         self.ball.setPos(0,0,10)
         self.paddle.setPos(0,0,0)
 
-        visionBuffer = self.win.makeTextureBuffer("eye",8,8,to_ram=True)
-        self.visionTexture = visionBuffer.getTexture()
-        eyeLens = PerspectiveLens()
-        eyeCam = self.makeCamera(visionBuffer,lens=eyeLens)
-        eyeCam.reparentTo(self.render)
-        eyeCam.setPos(0,0,15)
-        eyeCam.lookAt(0,0,0)
+        # visionBuffer = self.win.makeTextureBuffer("eye",8,8,to_ram=True)
+        # self.visionTexture = visionBuffer.getTexture()
+        # eyeLens = PerspectiveLens()
+        # eyeCam = self.makeCamera(visionBuffer,lens=eyeLens)
+        # eyeCam.reparentTo(self.render)
+        # eyeCam.setPos(0,0,15)
+        # eyeCam.lookAt(0,0,0)
              
-        cm = CardMaker("card")
-        cm.setFrame(-0.25,0.25,-0.25,0.25)
-        card = self.aspect2d.attachNewNode(cm.generate())
-        card.setPos(-0.75,0,-0.75)
-        card.setTexture(self.visionTexture)
+        # cm = CardMaker("card")
+        # cm.setFrame(-0.25,0.25,-0.25,0.25)
+        # card = self.aspect2d.attachNewNode(cm.generate())
+        # card.setPos(-0.75,0,-0.75)
+        # card.setTexture(self.visionTexture)
 
-        self.brain = CTRNN(76)
+        self.brain = CTRNN(10)
         self.currentScore = 0
         self.bestBrain = self.brain
         self.bestBrainScore = 0
@@ -58,41 +58,44 @@ class VisionSim(SimBase):
 
 
     def setBrainMask(self):
-        mask = np.zeros((self.brain.size,self.brain.size))
-        mask[64,:64] = np.ones(64)
-        mask[74,64] = 1
-        mask[75,64] = 1
+        mask = np.ones((10,10))
         self.brain.mask = mask
-        print(mask[64,64])
+        # mask = np.zeros((self.brain.size,self.brain.size))
+        # mask[64,:64] = np.ones(64)
+        # mask[74,64] = 1
+        # mask[75,64] = 1
+        # self.brain.mask = mask
+        # print(mask[64,64])
 
 
 
 
     def update(self, task):
         dt = 0.032
-        visTexData = self.visionTexture.getRamImage()
-        eyeArray = np.frombuffer(visTexData,np.uint8)
+        # visTexData = self.visionTexture.getRamImage()
+        # eyeArray = np.frombuffer(visTexData,np.uint8)
 
-        if(eyeArray.size != 0):
-            eyeArray = np.reshape(eyeArray,(8,8,4))
-            eyeArray = cv2.cvtColor(eyeArray[:,:,:3],cv2.COLOR_BGR2GRAY).astype(float).flatten()
-            eyeArray /= 255
-           
-           
-            inputArray = np.zeros(self.brain.size)
-            inputArray[:eyeArray.size] = eyeArray
-            outputArray = self.brain.step(inputArray)
-            self.paddle.setPos(self.paddle,outputArray[-2]*dt,outputArray[-1]*dt,0)
+    
+        # eyeArray = np.reshape(eyeArray,(8,8,4))
+        # eyeArray = cv2.cvtColor(eyeArray[:,:,:3],cv2.COLOR_BGR2GRAY).astype(float).flatten()
+        # eyeArray /= 255
+        
+        
+        inputArray = np.zeros(self.brain.size)
+        inputArray[:3] = np.array(self.ball.getPos(self.render))
+        inputArray[3:5] = np.array([self.paddle.getX(),self.paddle.getY()])
+        outputArray = self.brain.step(inputArray)
+        self.paddle.setPos(self.paddle,outputArray[-2]*dt,outputArray[-1]*dt,0)
 
-            if(self.paddle.getX() > 3):
-                self.paddle.setX(self.render,3)
-            elif(self.paddle.getX()<-3):
-                self.paddle.setX(self.render,-3)
-            
-            if(self.paddle.getY() > 3):
-                self.paddle.setY(self.render,3)
-            elif(self.paddle.getY()<-3):
-                self.paddle.setY(self.render,-3)
+        if(self.paddle.getX() > 3):
+            self.paddle.setX(self.render,3)
+        elif(self.paddle.getX()<-3):
+            self.paddle.setX(self.render,-3)
+        
+        if(self.paddle.getY() > 3):
+            self.paddle.setY(self.render,3)
+        elif(self.paddle.getY()<-3):
+            self.paddle.setY(self.render,-3)
         
         self.ball.setPos(self.ball,0,0,-5*dt)
         if(self.ball.getZ()<-1):
@@ -109,7 +112,7 @@ class VisionSim(SimBase):
                 self.bestBrainScore = self.currentScore
             
             self.brain = CTRNN.recombine(self.bestBrain,self.bestBrain)
-            self.brain.mutate(0.1)
+            self.brain.mutate(1)
             self.paddle.setPos(self.render,0,0,0)
             self.gen += 1
             if(self.gen%10 == 0):
