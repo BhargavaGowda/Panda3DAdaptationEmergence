@@ -51,13 +51,14 @@ class VisionSim(SimBase):
         self.bestBrain = self.brain
         self.bestBrainScore = 0
         self.ballCounter = 0
-        self.maxGen = 400
+        self.maxGen = 1000
         self.gen = 0
         self.fitnessTrend = np.zeros(self.maxGen)
+        self.mut = 1
 
-        # self.brain.weights = np.loadtxt("results/gen_300simpleCatchingWeights.csv",delimiter=",")
-        # self.brain.bias = np.loadtxt("results/gen_300simpleCatchingBias.csv",delimiter=",")
-        # self.brain.timescale = np.loadtxt("results/gen_300simpleCatchingTimescale.csv",delimiter=",")
+        # self.brain.weights = np.loadtxt("results/brains/Size_10_Mut1_Weights.csv",delimiter=",")
+        # self.brain.bias = np.loadtxt("results/brains/Size_10_Mut1_Bias.csv",delimiter=",")
+        # self.brain.timescale = np.loadtxt("results/brains/Size_10_Mut1_Time.csv",delimiter=",")
 
         mask = np.zeros((10,10))
         mask[-2,:5] = 1
@@ -114,21 +115,26 @@ class VisionSim(SimBase):
                 self.bestBrain = self.brain
                 self.bestBrainScore = self.currentScore
             
+            if(self.gen!=0 and self.gen%100 == 0):
+                if(self.mut == 1):
+                    self.mut = 0.1
+                else:
+                    self.mut = 1
             self.brain = CTRNN.recombine(self.bestBrain,self.bestBrain)
-            self.brain.mutate(1)
+            self.brain.mutate(self.mut)
             # print(self.brain.weights)
             # print(self.brain.bias)
             self.paddle.setPos(self.render,0,0,0)
-            print(self.currentScore)
-            self.fitnessTrend[self.gen] = self.currentScore          
+            print(self.gen,":",self.currentScore)
+            self.fitnessTrend[self.gen] = self.bestBrainScore         
             self.currentScore = 0
             self.ballCounter = 0
             self.gen += 1
             if(self.gen == self.maxGen):
-                np.savetxt("results/Mut1Trend.csv",self.fitnessTrend,delimiter=",")
-                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_Mut1_Weights.csv",self.bestBrain.weights,delimiter=",")
-                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_Mut1_Bias.csv",self.bestBrain.bias,delimiter=",")
-                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_Mut1_Time.csv",self.bestBrain.timescale,delimiter=",")
+                np.savetxt("results/MutInterleaved2xTrend.csv",self.fitnessTrend,delimiter=",")
+                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_MutInterleaved2x_Weights.csv",self.bestBrain.weights,delimiter=",")
+                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_MutInterleaved2x_Bias.csv",self.bestBrain.bias,delimiter=",")
+                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_MutInterleaved2x_Time.csv",self.bestBrain.timescale,delimiter=",")
                 print("best score was",str(self.bestBrainScore))
                 sys.exit()
                 # print("best score from gen " + str(self.gen) + " : " + str(self.bestBrainScore))
