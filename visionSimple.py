@@ -24,6 +24,9 @@ class VisionSim(SimBase):
         self.render.setLight(dlnp)
         self.cam.setPos(0,0,15)
         self.cam.lookAt(0,0,0)
+        self.simSteps = 10
+        self.dt = 0.032
+        self.simPrintTimer = 10
 
         self.ball = self.loader.loadModel("models/ball.bam")
         self.paddle = self.loader.loadModel("models/paddle.bam")
@@ -56,9 +59,9 @@ class VisionSim(SimBase):
         self.fitnessTrend = np.zeros(self.maxGen)
         self.mut = 1
 
-        # self.brain.weights = np.loadtxt("results/brains/Size_10_Mut1_Weights.csv",delimiter=",")
-        # self.brain.bias = np.loadtxt("results/brains/Size_10_Mut1_Bias.csv",delimiter=",")
-        # self.brain.timescale = np.loadtxt("results/brains/Size_10_Mut1_Time.csv",delimiter=",")
+        self.brain.weights = np.loadtxt("results/brains/Size_10_TConstTime_Weights.csv",delimiter=",")
+        self.brain.bias = np.loadtxt("results/brains/Size_10_TConstTime_Bias.csv",delimiter=",")
+        self.brain.timescale = np.loadtxt("results/brains/Size_10_TConstTime_Time.csv",delimiter=",")
 
         mask = np.zeros((10,10))
         mask[-2,:5] = 1
@@ -70,25 +73,14 @@ class VisionSim(SimBase):
         self.brain.mask = mask
         self.brain.applyMask()
         print(self.brain.weights)
-        
 
-
-    def update(self, task):
-        dt = 0.032
-        # visTexData = self.visionTexture.getRamImage()
-        # eyeArray = np.frombuffer(visTexData,np.uint8)
-
-    
-        # eyeArray = np.reshape(eyeArray,(8,8,4))
-        # eyeArray = cv2.cvtColor(eyeArray[:,:,:3],cv2.COLOR_BGR2GRAY).astype(float).flatten()
-        # eyeArray /= 255
-        
+    def simUpdate(self):
         
         inputArray = np.zeros(self.brain.size)
         inputArray[:3] = np.array(self.ball.getPos(self.render))
         inputArray[3:5] = np.array([self.paddle.getX(self.render),self.paddle.getY(self.render)])
         outputArray = self.brain.step(inputArray)
-        self.paddle.setPos(self.paddle,2*outputArray[-2]*dt,2*outputArray[-1]*dt,0)
+        self.paddle.setPos(self.paddle,outputArray[-2]*self.dt,outputArray[-1]*self.dt,0)
 
         if(self.paddle.getX() > 3):
             self.paddle.setX(self.render,3)
@@ -100,7 +92,7 @@ class VisionSim(SimBase):
         elif(self.paddle.getY()<-3):
             self.paddle.setY(self.render,-3)
         
-        self.ball.setPos(self.ball,0,0,-5*dt)
+        self.ball.setPos(self.ball,0,0,-5*self.dt)
         if(self.ball.getZ()<-1):
             self.currentScore += 4-(self.ball.getPos(self.render)-self.paddle.getPos(self.render)).length()
             # if (self.ball.getPos(self.render)-self.paddle.getPos(self.render)).length()<3:
@@ -110,39 +102,62 @@ class VisionSim(SimBase):
             self.ball.setPos(self.render,random.randint(-3,3),random.randint(-3,3),10)
             self.ballCounter+=1
         
-        if self.ballCounter >= 10:
-            if(self.currentScore > self.bestBrainScore):
-                self.bestBrain = self.brain
-                self.bestBrainScore = self.currentScore
-            
-            if(self.gen!=0 and self.gen%100 == 0):
-                if(self.mut == 1):
-                    self.mut = 0.1
-                else:
-                    self.mut = 1
-            self.brain = CTRNN.recombine(self.bestBrain,self.bestBrain)
-            self.brain.mutate(self.mut)
-            # print(self.brain.weights)
-            # print(self.brain.bias)
+        if self.ballCounter >= 10:   
+            self.evolveAgent()
+            if self.gen%50 == 0:
+                print(self.gen,"current:",self.currentScore,"best:",self.bestBrainScore)
             self.paddle.setPos(self.render,0,0,0)
-            print(self.gen,":",self.currentScore)
             self.fitnessTrend[self.gen] = self.bestBrainScore         
             self.currentScore = 0
             self.ballCounter = 0
             self.gen += 1
+
+            # if (self.gen!=0 and self.gen%100==0):
+            #     if(self.mut == 1):
+            #         self.mut = 0.1
+            #     else:
+            #         self.mut = 1
+            
             if(self.gen == self.maxGen):
-                np.savetxt("results/MutInterleaved2xTrend.csv",self.fitnessTrend,delimiter=",")
-                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_MutInterleaved2x_Weights.csv",self.bestBrain.weights,delimiter=",")
-                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_MutInterleaved2x_Bias.csv",self.bestBrain.bias,delimiter=",")
-                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_MutInterleaved2x_Time.csv",self.bestBrain.timescale,delimiter=",")
+                np.savetxt("results/TConstTimeTrend.csv",self.fitnessTrend,delimiter=",")
+                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_TConstTime_Weights.csv",self.bestBrain.weights,delimiter=",")
+                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_TConstTime_Bias.csv",self.bestBrain.bias,delimiter=",")
+                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_TConstTime_Time.csv",self.bestBrain.timescale,delimiter=",")
                 print("best score was",str(self.bestBrainScore))
                 sys.exit()
-                # print("best score from gen " + str(self.gen) + " : " + str(self.bestBrainScore))
-                # print("__")
-                # if(self.gen%100 == 0):
-                #     np.savetxt("results/" + "gen_"+str(self.gen)+"simpleCatchingWeights.csv",self.bestBrain.weights,delimiter=",")
-                #     np.savetxt("results/" +"gen_"+str(self.gen)+"simpleCatchingBias.csv",self.bestBrain.bias,delimiter=",")
-                #     np.savetxt("results/" +"gen_"+str(self.gen)+"simpleCatchingTimescale.csv",self.bestBrain.timescale,delimiter=",")          
+        
+    def evolveAgent(self):
+        if(self.currentScore > self.bestBrainScore):
+            self.bestBrain = self.brain
+            self.bestBrainScore = self.currentScore
+            
+        self.brain = CTRNN.recombine(self.bestBrain,self.bestBrain)
+        self.brain.mutateSimple(self.mut)
+        # print(self.brain.weights)
+        # print(self.brain.bias)
+        
+        
+
+
+    def update(self, task):
+        frameTime = globalClock.getDt()
+        # if(frameTime>1/20):
+        #     self.simSteps-=10
+        # elif(frameTime<1/40):
+        #     self.simSteps+=10
+        
+        for i in range(1):
+            self.simUpdate()
+
+        
+        self.simPrintTimer += 1
+        if self.simPrintTimer%100 == 0:
+            print("Sim Steps per frame:", str(self.simSteps))
+
+
+        
+            
+                         
                
         return task.cont
 

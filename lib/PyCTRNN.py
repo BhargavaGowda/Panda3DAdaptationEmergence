@@ -103,6 +103,14 @@ class CTRNN:
         # numpy.copyto(self.savedBias,self.bias)
         # numpy.copyto(self.savedTimescale,self.timescale)
 
+    # keeps time constants at 0.5
+    def mutateSimple(self, mutationSize = 0.01):
+        self.weights = (self.weights+(numpy.random.rand(self.size,self.size)-0.5)*mutationSize).clip(-1*self.weightRange,self.weightRange)
+        self.bias = (self.bias+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(-1*self.biasRange,self.biasRange)
+        self.timescale = numpy.full(self.size,0.5)
+        self.applyMask()
+
+
         
 
 
