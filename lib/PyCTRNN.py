@@ -110,6 +110,12 @@ class CTRNN:
         self.timescale = numpy.full(self.size,0.5)
         self.applyMask()
 
+    def mutateSplit(self, mutationSize = 0.1, timeChangeSize = 0.01):
+        self.weights = (self.weights+(numpy.random.rand(self.size,self.size)-0.5)*mutationSize).clip(-1*self.weightRange,self.weightRange)
+        self.bias = (self.bias+(numpy.random.rand(self.size)-0.5)*mutationSize).clip(-1*self.biasRange,self.biasRange)
+        self.timescale = (self.timescale+(numpy.random.rand(self.size)-0.5)*timeChangeSize).clip(0,1)
+        self.applyMask()
+
 
         
 
