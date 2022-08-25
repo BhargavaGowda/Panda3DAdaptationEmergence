@@ -51,25 +51,20 @@ class VisionSim(SimBase):
         self.bestBrainScore = 0
         self.ballCounter = 0
         self.gen = 0
-        self.setBrainMask()
+
+        self.brain.weights = np.loadtxt("results/gen_800simpleCatchingWeights.csv",delimiter=",")
+        self.brain.bias = np.loadtxt("results/gen_800simpleCatchingBias.csv",delimiter=",")
+        self.brain.timescale = np.loadtxt("results/gen_800simpleCatchingTimescale.csv",delimiter=",")
+        mask = np.zeros((10,10))
+        mask[-2,:5] = 1
+        mask[-1,:5] = 1
+
         
-
-
-
         
-
-
-    def setBrainMask(self):
-        mask = np.ones((10,10))
         self.brain.mask = mask
-        # mask = np.zeros((self.brain.size,self.brain.size))
-        # mask[64,:64] = np.ones(64)
-        # mask[74,64] = 1
-        # mask[75,64] = 1
-        # self.brain.mask = mask
-        # print(mask[64,64])
-
-
+        self.brain.applyMask()
+        print(self.brain.weights)
+        
 
 
     def update(self, task):
@@ -85,7 +80,7 @@ class VisionSim(SimBase):
         
         inputArray = np.zeros(self.brain.size)
         inputArray[:3] = np.array(self.ball.getPos(self.render))
-        inputArray[3:5] = np.array([self.paddle.getX(),self.paddle.getY()])
+        inputArray[3:5] = np.array([self.paddle.getX(self.render),self.paddle.getY(self.render)])
         outputArray = self.brain.step(inputArray)
         self.paddle.setPos(self.paddle,outputArray[-2]*dt,outputArray[-1]*dt,0)
 
@@ -114,14 +109,20 @@ class VisionSim(SimBase):
                 self.bestBrainScore = self.currentScore
             
             self.brain = CTRNN.recombine(self.bestBrain,self.bestBrain)
-            self.brain.mutate(1)
+            self.brain.mutate(0.1)
             self.paddle.setPos(self.render,0,0,0)
             self.gen += 1
             if(self.gen%10 == 0):
-                print("best score:",self.bestBrainScore)
+                print("best score from gen " + str(self.gen) + " : " + str(self.bestBrainScore))
                 print("__")
+                if(self.gen%100 == 0):
+                    np.savetxt("results/" + "gen_"+str(self.gen)+"simpleCatchingWeights.csv",self.bestBrain.weights,delimiter=",")
+                    np.savetxt("results/" +"gen_"+str(self.gen)+"simpleCatchingBias.csv",self.bestBrain.bias,delimiter=",")
+                    np.savetxt("results/" +"gen_"+str(self.gen)+"simpleCatchingTimescale.csv",self.bestBrain.timescale,delimiter=",")
             self.currentScore = 0
             self.ballCounter = 0
+
+        
             
                
         return task.cont

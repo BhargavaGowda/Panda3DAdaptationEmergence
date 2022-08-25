@@ -26,7 +26,7 @@ class Sim(ShowBase):
         self.timestep = 0.016
         self.timer1 = 0
         self.timerEvolve = 0
-        self.puckNum = 14
+        self.puckNum = 10
 
         self.world = bl.BulletWorld()
         self.world.setGravity(Vec3(0, 0, -9.81))
@@ -56,7 +56,7 @@ class Sim(ShowBase):
 
     def setUpPucks(self,num,puckList):
         for i in range(num): 
-            testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"),brainSize=6)
+            testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"),brainSize=4)
             self.render.attachNewNode(testPuck.bodyNP.node())
             testPuck.setPos(-1*i-5,i-15,0)
             testbox1 = self.loader.loadModel("models/box.egg")
@@ -132,7 +132,7 @@ class Sim(ShowBase):
         # print(avgPos)
         for i in range(4):
             newBrain = CTRNN.recombine(self.puckList[randrange(0,surviveNum)].brain,self.puckList[randrange(0,surviveNum)].brain)
-            newBrain.mutate(mutationSize=0.1)
+            newBrain.mutate(mutationSize=0.2)
             testPuck = Puck.makePuck(self.world,self.loader.loadModel("models/puckDS.bam"))
             self.render.attachNewNode(testPuck.bodyNP.node())
             testPuck.setPos(-1*i-10,i-15,0)

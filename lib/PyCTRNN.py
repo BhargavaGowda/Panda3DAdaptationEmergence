@@ -37,14 +37,25 @@ class CTRNN:
         return self.potentials
 
     def step(self, inputArray):
-        self.potentials += self.timescale*(inputArray - self.potentials + numpy.matmul(self.weights, self.sigmoid(self.potentials+self.bias)))
+        sigmoidInput = self.potentials+self.bias
+        sigmoided = self.sigmoid(sigmoidInput)
+        matmuled = numpy.matmul(self.weights, sigmoided)
+        delta = self.timescale*(inputArray - self.potentials + matmuled)
+        # print("--")
+        # print(sigmoidInput)
+        # print(sigmoided)
+        # print(matmuled)
+        # print(delta)
+        # print("--")
+        self.potentials += delta
         return self.potentials
 
     def applyMask(self):
         self.weights = self.weights*self.mask
 
     def sigmoid(self,inputVector):
-        return (1/(1+numpy.exp(-inputVector.clip(min=100))))
+        return (1/(1+numpy.exp(-inputVector.clip(min=-100))))
+        # return (1/(1+numpy.exp(-inputVector)))
 
     # def adapt(self,improvement,improvementThreshold=0.001,mutationSize=0.001):
     #     if(improvement>improvementThreshold):
