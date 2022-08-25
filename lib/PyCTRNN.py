@@ -38,7 +38,7 @@ class CTRNN:
 
     def step(self, inputArray):
         sigmoidInput = self.potentials+self.bias
-        sigmoided = self.sigmoid(sigmoidInput)
+        sigmoided = (self.sigmoid(sigmoidInput)-0.5)*2
         matmuled = numpy.matmul(self.weights, sigmoided)
         delta = self.timescale*(inputArray - self.potentials + matmuled)
         # print("--")
