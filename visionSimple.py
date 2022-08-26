@@ -1,4 +1,5 @@
 import random
+from turtle import pensize
 from lib.SimBase import SimBase
 import panda3d.bullet as bl
 from direct.showbase.ShowBaseGlobal import globalClock
@@ -41,27 +42,26 @@ class VisionSim(SimBase):
         self.bestBrain = self.brain
         self.bestBrainScore = 0
         self.ballCounter = 0
+        self.numDrops = 20
         self.areaSize = 3
-        self.maxGen = 2000
+        self.maxGen = 500
         self.gen = 0
-        self.fitnessTrend = np.zeros(self.maxGen)
         self.mut = 1
-        self.saveName = "BasicMask"
-        self.loadName = "BasicMask"
+        self.numTrials = 10
+        self.currentTrial = 0
+        self.fitnessTrend = np.zeros(self.numTrials)
+        self.saveBrain = False
+        self.saveName = "20Drop500Gen10Trials"
+        # self.loadName = "Discrete20Fit"
 
-        self.brain.weights = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Weights.csv",delimiter=",")
-        self.brain.bias = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Bias.csv",delimiter=",")
-        self.brain.timescale = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Time.csv",delimiter=",")
+        # self.brain.weights = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Weights.csv",delimiter=",")
+        # self.brain.bias = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Bias.csv",delimiter=",")
+        # self.brain.timescale = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Time.csv",delimiter=",")
 
         mask = np.zeros((10,10))
         mask[-2,:5] = 1
         mask[-1,:5] = 1
-        # mask[5,:6] = 1
-        
-
-
-        
-        
+        # mask[5,:6] = 1 
         self.brain.mask = mask
         self.brain.applyMask()
         print(self.brain.weights)
@@ -86,20 +86,20 @@ class VisionSim(SimBase):
         
         self.ball.setPos(self.ball,0,0,-5*self.dt)
         if(self.ball.getZ()<-1):
-            self.currentScore += 4-(self.ball.getPos(self.render)-self.paddle.getPos(self.render)).length()
-            # if (self.ball.getPos(self.render)-self.paddle.getPos(self.render)).length()<3:
-            #     # print("hit")
-            #     self.currentScore+=1
+            # self.currentScore += 4-(self.ball.getPos(self.render)-self.paddle.getPos(self.render)).length()
+            if (self.ball.getPos(self.render)-self.paddle.getPos(self.render)).length()<2:
+                # print("hit")
+                self.currentScore+=1
 
             self.ball.setPos(self.render,random.randint(-self.areaSize,self.areaSize),random.randint(-self.areaSize,self.areaSize),10)
             self.ballCounter+=1
         
-        if self.ballCounter >= 10:   
+        if self.ballCounter >= self.numDrops:
             self.evolveAgent()
             if self.gen%100 == 0:
                 print(self.gen,"current:",self.currentScore,"best:",self.bestBrainScore)
             self.paddle.setPos(self.render,0,0,0)
-            self.fitnessTrend[self.gen] = self.bestBrainScore         
+            # self.fitnessTrend[self.gen] = self.bestBrainScore         
             self.currentScore = 0
             self.ballCounter = 0
             self.gen += 1
@@ -111,12 +111,27 @@ class VisionSim(SimBase):
             #         self.mut = 1
             
             if(self.gen == self.maxGen):
-                np.savetxt("results/"+self.saveName+"Trend.csv",self.fitnessTrend,delimiter=",")
-                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_" + self.saveName + "_Weights.csv",self.bestBrain.weights,delimiter=",")
-                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_" + self.saveName + "_Bias.csv",self.bestBrain.bias,delimiter=",")
-                np.savetxt("results/brains/Size_" + str(self.brain.size) + "_" + self.saveName + "_Time.csv",self.bestBrain.timescale,delimiter=",")
-                print("best score was",str(self.bestBrainScore))
-                sys.exit()
+                # np.savetxt("results/"+self.saveName+"Trend.csv",self.fitnessTrend,delimiter=",")
+            
+                self.fitnessTrend[self.currentTrial] = self.bestBrainScore/self.numDrops
+                if (self.saveBrain == True):
+                    np.savetxt("results/brains/Size_" + str(self.brain.size) + "_Trial_"+ str(self.currentTrial) + "_" + self.saveName + "_Weights.csv",self.bestBrain.weights,delimiter=",")
+                    np.savetxt("results/brains/Size_" + str(self.brain.size) + "_Trial_"+ str(self.currentTrial)  + "_" + self.saveName + "_Bias.csv",self.bestBrain.bias,delimiter=",")
+                    np.savetxt("results/brains/Size_" + str(self.brain.size) + "_Trial_"+ str(self.currentTrial) +  "_" + self.saveName + "_Time.csv",self.bestBrain.timescale,delimiter=",")
+                print("Trial "+str(self.currentTrial)+" best score was "+str(self.bestBrainScore))
+
+                self.currentTrial+=1
+                if(self.currentTrial == self.numTrials):
+                    np.savetxt("results/"+self.saveName+"Results.csv",self.fitnessTrend,delimiter=",")
+                    sys.exit()
+                
+                self.gen = 0
+                self.bestBrainScore = 0
+                self.prevMask = self.brain.mask
+                self.brain = CTRNN(10)
+                self.brain.mask = self.prevMask
+                self.bestBrain = self.brain
+
         
     def evolveAgent(self):
         if(self.currentScore > self.bestBrainScore):
@@ -133,18 +148,21 @@ class VisionSim(SimBase):
 
     def update(self, task):
         frameTime = globalClock.getDt()
+        if self.simPrintTimer>5:
+            self.simPrintTimer = 0
+            print("Sim Steps per sec:", str(round(self.simSteps/frameTime)))
+            print("Timefactor:" + str(round((self.simSteps/frameTime)*self.dt)))
         if(frameTime>1/20):
             self.simSteps-=10
         elif(frameTime<1/40):
             self.simSteps+=10
         
-        for i in range(1):
+        for i in range(self.simSteps):
             self.simUpdate()
 
         
-        self.simPrintTimer += 1
-        if self.simPrintTimer%100 == 0:
-            print("Sim Steps per frame:", str(self.simSteps))
+        self.simPrintTimer += frameTime
+        
 
 
         
