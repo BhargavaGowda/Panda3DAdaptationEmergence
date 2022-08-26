@@ -1,4 +1,3 @@
-from cProfile import label
 import matplotlib.pyplot as pl
 import numpy as np
 
@@ -17,7 +16,8 @@ data = [data1,data2]
 
 fig1, ax1 = pl.subplots()
 ax1.set_title('Fitness')
-ax1.boxplot(data)
+ax1.boxplot(data,labels=["10 Drop 1000Gen","20 Drop 500Gen"])
+
 
 # pl.figure(figsize=(7.5, 5))
 # pl.plot(data1,label=data1Label)
