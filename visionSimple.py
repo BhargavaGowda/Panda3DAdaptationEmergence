@@ -44,52 +44,62 @@ class VisionSim(SimBase):
         self.ballCounter = 0
         self.gen = 0
         self.currentTrial = 0
+        
+
+        # PARAMETERS
+        self.realTime = True
+        self.numDrops = 20
+        self.areaSize = 3
+        self.maxGen = 1000
+        self.mut = 4
+        self.numTrials = 10
+        self.saveBrain = True
+        self.retrieveBrain = True
+
         mask = np.zeros((10,10))
         mask[-2,:5] = 1
         mask[-1,:5] = 1
         # mask[5,:6] = 1 
         self.brain.mask = mask
         self.brain.applyMask()
-        print(self.brain.weights)
-
-        # PARAMETERS
-        self.numDrops = 10
-        self.areaSize = 3
-        self.maxGen = 1000
-        self.mut = 1
-        self.numTrials = 1
-        self.saveBrain = True
+        # print(self.brain.weights)
 
         # Logging
-        self.saveName = "Test_BasicMask"
-        self.loadName = "BasicMask"
+        self.saveName = "BasicMaskMut4"
+        self.loadName = "BasicMaskMut4"
         self.fitnessTrend = np.zeros(self.numTrials)
-        self.brain.weights = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Weights.csv",delimiter=",")
-        self.brain.bias = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Bias.csv",delimiter=",")
-        self.brain.timescale = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Time.csv",delimiter=",")
+        if(self.retrieveBrain == True):
+            print("Loading Brain:",self.loadName)
+            self.brain.weights = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Weights.csv",delimiter=",")
+            self.brain.bias = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Bias.csv",delimiter=",")
+            self.brain.timescale = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Time.csv",delimiter=",")
 
         
 
     def update(self, task):
 
         frameTime = globalClock.getDt()
-        self.simPrintTimer += frameTime
+        steps = 1
+        if(not self.realTime):
+            self.simPrintTimer += frameTime
 
-        if self.simPrintTimer>5:
-            self.simPrintTimer = 0
-            print("Sim Steps per sec:", str(round(self.simSteps/frameTime)))
-            print("Timefactor:" + str(round((self.simSteps/frameTime)*self.dt)))
-            
-        if(frameTime>1/20):
-            self.simSteps-=10
-        elif(frameTime<1/40):
-            self.simSteps+=10
-        
-        for i in range(self.simSteps):
+            if self.simPrintTimer>5:
+                self.simPrintTimer = 0
+                print("Sim Steps per sec:", str(round(self.simSteps/frameTime)))
+                print("Timefactor:" + str(round((self.simSteps/frameTime)*self.dt)))
+                
+            if(frameTime>1/20):
+                self.simSteps-=10
+            elif(frameTime<1/40):
+                self.simSteps+=10
+
+            steps = self.simSteps
+
+        for i in range(steps):
 
             self.simUpdate()
-            self.evolutionProcedure()
-            # self.testingProcedure()
+            # self.evolutionProcedure()
+            self.testingProcedure()
 
                        
                
@@ -138,9 +148,9 @@ class VisionSim(SimBase):
         self.bestBrain = self.brain
 
     def curateBrain(self):
-        np.savetxt("results/brains/Size_" + str(self.brain.size) + "_Trial_"+ str(self.currentTrial) + "_" + self.saveName + "_Weights.csv",self.bestBrain.weights,delimiter=",")
-        np.savetxt("results/brains/Size_" + str(self.brain.size) + "_Trial_"+ str(self.currentTrial)  + "_" + self.saveName + "_Bias.csv",self.bestBrain.bias,delimiter=",")
-        np.savetxt("results/brains/Size_" + str(self.brain.size) + "_Trial_"+ str(self.currentTrial) +  "_" + self.saveName + "_Time.csv",self.bestBrain.timescale,delimiter=",")
+        np.savetxt("results/brains/Size_" + str(self.brain.size)  + "_" +self.saveName + "_Weights.csv",self.bestBrain.weights,delimiter=",")
+        np.savetxt("results/brains/Size_" + str(self.brain.size) + "_" + self.saveName + "_Bias.csv",self.bestBrain.bias,delimiter=",")
+        np.savetxt("results/brains/Size_" + str(self.brain.size)  +  "_" + self.saveName + "_Time.csv",self.bestBrain.timescale,delimiter=",")
   
     def evolveAgent(self):  
         # replace brain if better score
@@ -168,19 +178,21 @@ class VisionSim(SimBase):
                 self.resetSim()
 
                 if(self.gen == self.maxGen):
-                    self.gen = 0
-
-                    self.fitnessTrend[self.currentTrial] = self.bestBrainScore/self.numDrops
-
+                    
+                    print("Best Score was", self.bestBrainScore)
                     if (self.saveBrain == True):
                         self.curateBrain()
-                    self.resetAgent()
-                    
-                    print("Trial " +str(self.currentTrial)+" best score was "+str(self.bestBrainScore))
-                    self.currentTrial+=1
-                    if(self.currentTrial == self.numTrials):
-                        np.savetxt("results/"+self.saveName+"Results.csv",self.fitnessTrend,delimiter=",")
-                        sys.exit()      
+                        sys.exit()
+
+
+                    # self.gen = 0
+                    # self.fitnessTrend[self.currentTrial] = self.bestBrainScore/self.numDrops     
+                    # print("Trial " +str(self.currentTrial)+" best score was "+str(self.bestBrainScore))
+                    # self.resetAgent()
+                    # self.currentTrial+=1
+                    # if(self.currentTrial == self.numTrials):
+                    #     np.savetxt("results/"+self.saveName+".csv",self.fitnessTrend,delimiter=",")
+                    #     sys.exit()      
 
     def testingProcedure(self):
         if(self.ballCounter >= self.numDrops):
