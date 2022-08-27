@@ -47,34 +47,34 @@ class VisionSim(SimBase):
         
 
         # PARAMETERS
-        self.realTime = True
+        self.realTime = False
         self.numDrops = 20
         self.areaSize = 3
         self.maxGen = 1000
-        self.mut = 4
-        self.numTrials = 10
+        self.mut = 2
+        self.numTrials = 30
         self.saveBrain = True
-        self.retrieveBrain = True
+        self.retrieveBrain = False
 
         mask = np.zeros((10,10))
         mask[-2,:5] = 1
         mask[-1,:5] = 1
         # mask[5,:6] = 1 
-        self.brain.mask = mask
-        self.brain.applyMask()
+        
+        
         # print(self.brain.weights)
 
         # Logging
-        self.saveName = "BasicMaskMut4"
-        self.loadName = "BasicMaskMut4"
+        self.saveName = "BasicMaskMut2"
+        self.loadName = "BasicMaskMut2"
         self.fitnessTrend = np.zeros(self.numTrials)
         if(self.retrieveBrain == True):
             print("Loading Brain:",self.loadName)
             self.brain.weights = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Weights.csv",delimiter=",")
             self.brain.bias = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Bias.csv",delimiter=",")
             self.brain.timescale = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Time.csv",delimiter=",")
-
-        
+        self.brain.mask = mask
+        self.brain.applyMask()
 
     def update(self, task):
 
@@ -98,8 +98,8 @@ class VisionSim(SimBase):
         for i in range(steps):
 
             self.simUpdate()
-            # self.evolutionProcedure()
-            self.testingProcedure()
+            self.evolutionProcedure()
+            # self.testingProcedure()
 
                        
                
@@ -148,6 +148,7 @@ class VisionSim(SimBase):
         self.bestBrain = self.brain
 
     def curateBrain(self):
+        print("Saving Brain:",self.saveName)
         np.savetxt("results/brains/Size_" + str(self.brain.size)  + "_" +self.saveName + "_Weights.csv",self.bestBrain.weights,delimiter=",")
         np.savetxt("results/brains/Size_" + str(self.brain.size) + "_" + self.saveName + "_Bias.csv",self.bestBrain.bias,delimiter=",")
         np.savetxt("results/brains/Size_" + str(self.brain.size)  +  "_" + self.saveName + "_Time.csv",self.bestBrain.timescale,delimiter=",")

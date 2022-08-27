@@ -1,7 +1,7 @@
 import matplotlib.pyplot as pl
 import numpy as np
 
-data1Label = "BasicFeedForwardMask"
+data1Label = "FullMaskMut4"
 data2Label = "BasicMaskMut4"
 data3Label = "Test_BasicMask"
 data4Label = "Discrete20SameTimeFit3Trend"
