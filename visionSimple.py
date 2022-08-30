@@ -41,15 +41,15 @@ class VisionSim(SimBase):
 
         # PARAMETERS
         self.brainSize = 7
-        self.realTime = False
+        self.realTime = True
         self.numDrops = 20
         self.areaSize = 5
         self.paddleSize = 1
-        self.maxGen = 1000
+        self.maxGen = 500
         self.mut = 2
         self.numTrials = 30
         self.saveBrain = True
-        self.retrieveBrain = False
+        self.retrieveBrain = True
         self.maxPop = 10
 
         mask = np.zeros((self.brainSize,self.brainSize))
@@ -80,14 +80,14 @@ class VisionSim(SimBase):
         
 
         # Logging
-        self.saveName = "HardBasic1000Gen"
-        self.loadName = "HardBasic1000Gen"
+        self.saveName = "BasicSmallToBigArea500Gen"
+        self.loadName = "BasicSmallToBigArea500Gen"
         self.fitnessTrend = np.zeros(self.numTrials)
         if(self.retrieveBrain == True):
             print("Loading Brain:",self.loadName)
-            self.brain.weights = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Weights.csv",delimiter=",")
-            self.brain.bias = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Bias.csv",delimiter=",")
-            self.brain.timescale = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Time.csv",delimiter=",")
+            self.brain.weights = np.loadtxt("results/brains/Size_" + str(self.brain.size)  + "_" + self.loadName + "_Weights.csv",delimiter=",")
+            self.brain.bias = np.loadtxt("results/brains/Size_" + str(self.brain.size)  + "_" + self.loadName + "_Bias.csv",delimiter=",")
+            self.brain.timescale = np.loadtxt("results/brains/Size_" + str(self.brain.size)  + "_" + self.loadName + "_Time.csv",delimiter=",")
             # self.brain.mask = mask
             # self.brain.applyMask()
             print(self.brain.weights)
@@ -115,8 +115,8 @@ class VisionSim(SimBase):
 
             self.simUpdate()
             # self.simpleEvolutionProcedure()
-            self.popEvolveProcedure()
-            # self.testingProcedure()
+            # self.popEvolveProcedure()
+            self.testingProcedure()
 
                        
                
