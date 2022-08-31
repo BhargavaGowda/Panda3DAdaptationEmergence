@@ -36,17 +36,11 @@ class VisionSim(SimBase):
         self.ball.setPos(0,0,10)
         self.paddle.setPos(0,0,0)
 
-        # init
-        self.currentScore = 0
-        self.bestBrainScore = 0
-        self.ballCounter = 0
-        self.gen = 0
-        self.currentTrial = 0
-        self.individualIndex = 0
+        
         
 
         # PARAMETERS
-        self.brainSize = 10
+        self.brainSize = 7
         self.realTime = True
         self.numDrops = 20
         self.areaSize = 5
@@ -58,13 +52,21 @@ class VisionSim(SimBase):
         self.retrieveBrain = True
         self.maxPop = 10
 
-        mask = np.zeros((10,10))
+        mask = np.zeros((self.brainSize,self.brainSize))
         mask[-2,:5] = 1
         mask[-1,:5] = 1
-        # mask[5,:7] = 1
+        # mask[5,:6] = 1
         # mask[6,:7] = 1 
 
+        # init
+        self.currentScore = 0
+        self.bestBrainScore = 0
+        self.ballCounter = 0
+        self.gen = 0
+        self.currentTrial = 0
+        self.individualIndex = 0
         self.pop = []
+
         for i in range(self.maxPop):
             newBrain = CTRNN(self.brainSize)
             newBrain.mask = mask
@@ -78,14 +80,14 @@ class VisionSim(SimBase):
         
 
         # Logging
-        self.saveName = "HardBasic500Gen"
-        self.loadName = "HardBasic500Gen"
+        self.saveName = "BasicSmallToBigArea500Gen"
+        self.loadName = "BasicSmallToBigArea500Gen"
         self.fitnessTrend = np.zeros(self.numTrials)
         if(self.retrieveBrain == True):
             print("Loading Brain:",self.loadName)
-            self.brain.weights = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Weights.csv",delimiter=",")
-            self.brain.bias = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Bias.csv",delimiter=",")
-            self.brain.timescale = np.loadtxt("results/brains/Size_10_" + self.loadName + "_Time.csv",delimiter=",")
+            self.brain.weights = np.loadtxt("results/brains/Size_" + str(self.brain.size)  + "_" + self.loadName + "_Weights.csv",delimiter=",")
+            self.brain.bias = np.loadtxt("results/brains/Size_" + str(self.brain.size)  + "_" + self.loadName + "_Bias.csv",delimiter=",")
+            self.brain.timescale = np.loadtxt("results/brains/Size_" + str(self.brain.size)  + "_" + self.loadName + "_Time.csv",delimiter=",")
             # self.brain.mask = mask
             # self.brain.applyMask()
             print(self.brain.weights)
@@ -180,13 +182,14 @@ class VisionSim(SimBase):
             if(self.individualIndex == self.maxPop):
                 self.individualIndex = 0
                 self.pop.sort(key=lambda x : x[1], reverse=True)
-                self.bestBrain = self.pop[0][0]
-                self.bestBrainScore = self.pop[0][1]
+                if(self.pop[0][1]>self.bestBrainScore):
+                    self.bestBrain = self.pop[0][0]
+                    self.bestBrainScore = self.pop[0][1]
                 surviveNum = len(self.pop)//2
                 i=0
                 while(i<self.maxPop-surviveNum):
                     newBrain = CTRNN.recombine(self.pop[random.randint(0,surviveNum-1)][0],self.pop[random.randint(0,surviveNum-1)][0])
-                    newBrain.mutateSplit(mutationSize=self.mut,timeChangeSize=0.1)
+                    newBrain.mutate(mutationSize=self.mut)
                     self.pop[surviveNum+i][0] = newBrain
                     i+=1
 
