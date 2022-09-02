@@ -46,7 +46,8 @@ class VisionSim(SimBase):
         self.areaSize = 5
         self.paddleSize = 1
         self.maxGen = 500
-        self.mut = 2
+        self.mut = 1
+        self.crossRate = 0.5
         self.numTrials = 30
         self.saveBrain = True
         self.retrieveBrain = True
@@ -65,6 +66,7 @@ class VisionSim(SimBase):
         self.gen = 0
         self.currentTrial = 0
         self.individualIndex = 0
+        self.retest = False
         self.pop = []
 
         for i in range(self.maxPop):
@@ -80,8 +82,8 @@ class VisionSim(SimBase):
         
 
         # Logging
-        self.saveName = "BasicSmallToBigArea500Gen"
-        self.loadName = "BasicSmallToBigArea500Gen"
+        self.saveName = "DiffEvolHard"
+        self.loadName = "DiffEvolHard"
         self.fitnessTrend = np.zeros(self.numTrials)
         if(self.retrieveBrain == True):
             print("Loading Brain:",self.loadName)
@@ -95,6 +97,7 @@ class VisionSim(SimBase):
     def update(self, task):
 
         frameTime = globalClock.getDt()
+        # self.dt = frameTime
         steps = 1
         if(not self.realTime):
             self.simPrintTimer += frameTime
@@ -117,6 +120,8 @@ class VisionSim(SimBase):
             # self.simpleEvolutionProcedure()
             # self.popEvolveProcedure()
             self.testingProcedure()
+            # self.diffEvolveProcedure()
+
 
                        
                
@@ -214,6 +219,60 @@ class VisionSim(SimBase):
 
             self.resetSim()
 
+    def getDifTestBrain(self):
+        sample = list(range(len(self.pop)))
+        random.shuffle(sample)
+        donorList = []
+        while(len(donorList)<3):
+            testDonor = sample.pop()
+            if(testDonor != self.individualIndex):
+                donorList.append(testDonor)
+        return CTRNN.generateDifferentialTestIndividual(self.pop[self.individualIndex][0],self.pop[donorList[0]][0],self.pop[donorList[1]][0],self.pop[donorList[2]][0],self.mut,self.crossRate)
+
+    def diffEvolveProcedure(self):
+        if self.ballCounter >= self.numDrops:
+            
+            if(self.gen == 0 or self.retest):
+                self.pop[self.individualIndex][1] = self.currentScore
+                
+            else:
+                # assume it has just tested the test vector
+                if(self.currentScore > self.pop[self.individualIndex][1]):
+                    self.pop[self.individualIndex][0] = self.brain
+                    self.pop[self.individualIndex][1] = self.currentScore
+            
+            self.individualIndex += 1
+
+            if(self.individualIndex == self.maxPop):
+
+                self.individualIndex = 0
+                self.pop.sort(key=lambda x : x[1], reverse=True)
+                self.bestBrain = self.pop[0][0]
+                self.bestBrainScore = self.pop[0][1]
+                self.gen+=1
+
+                if(self.gen%10 == 0):
+                    print("Gen "+str(self.gen)+" best score is "+str(self.bestBrainScore))
+
+                if(self.gen == self.maxGen):
+                    print("Done. Best Score:",self.bestBrainScore)
+                    if (self.saveBrain == True):
+                        self.curateBrain()                         
+                    sys.exit()
+                
+            if(self.gen == 0 or self.retest):
+                self.brain = self.pop[self.individualIndex][0]
+            else:
+                self.brain = self.getDifTestBrain()
+                        
+            
+      
+            self.resetSim()
+
+
+
+
+           
 
     # Conduct a number of evolution trials and record the results
     def simpleEvolutionProcedure(self):

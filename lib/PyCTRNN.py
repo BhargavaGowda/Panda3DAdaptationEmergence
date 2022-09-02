@@ -1,4 +1,5 @@
 import numpy
+import random
 
 class CTRNN:
 
@@ -92,6 +93,35 @@ class CTRNN:
         newBrain.timescale=newTimescale
         # newBrain.savedTimescale=newTimescale
         newBrain.applyMask()
+        return newBrain
+
+    @staticmethod
+    def generateDifferentialTestIndividual(trialBrain,donor1,donor2,donor3,F,CR):
+        newBrain = CTRNN(trialBrain.size)
+        
+        
+        newBrain.weights = donor1.weights + F*(donor2.weights - donor3.weights)
+        newBrain.bias = donor1.bias + F*(donor2.bias - donor3.bias)
+        newBrain.timescale = donor1.timescale + F*(donor2.timescale - donor3.timescale)
+
+        for i in range(newBrain.size):
+            for j in range(newBrain.size):
+                keepPoint = random.randrange(0,newBrain.size)
+                if(j != keepPoint and random.random() > CR):
+                    newBrain.weights[i,j] = trialBrain.weights[i,j]
+
+        for j in range(newBrain.size):
+            keepPoint = random.randrange(0,newBrain.size)
+            if(j != keepPoint and random.random() > CR):
+                newBrain.bias[j] = trialBrain.bias[j]
+        for j in range(newBrain.size):
+            keepPoint = random.randrange(0,newBrain.size)
+            if(j != keepPoint and random.random() > CR):
+                newBrain.timescale[j] = trialBrain.timescale[j]
+
+        newBrain.mask = trialBrain.mask
+        newBrain.applyMask()
+
         return newBrain
 
     def mutate(self,mutationSize=0.01):
