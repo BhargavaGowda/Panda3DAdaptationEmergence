@@ -1,15 +1,11 @@
 import random
-from turtle import pensize
 from lib.SimBase import SimBase
 import panda3d.bullet as bl
-from direct.showbase.ShowBaseGlobal import globalClock
-from panda3d.core import Vec3,DirectionalLight,ConfigVariableBool
 import numpy as np
 import cv2
 from lib.PyCTRNN import CTRNN
 import sys
 
-vsync = ConfigVariableBool("sync-video",True)
 
 class VisionSim(SimBase):
 
@@ -17,17 +13,7 @@ class VisionSim(SimBase):
         super().__init__(fStartDirect, windowType)
 
 
-        dlight = DirectionalLight('sun')
-        dlight.color = (4,4,4,1)
-        dlnp = self.render.attachNewNode(dlight)
-        dlnp.setPos(10,0,10)
-        dlnp.lookAt(0,0,0)
-        self.render.setLight(dlnp)
-        self.cam.setPos(0,0,30)
-        self.cam.lookAt(0,0,0)
-        self.simSteps = 10
-        self.dt = 0.032
-        self.simPrintTimer = 10
+        
 
         self.ball = self.loader.loadModel("models/ball.bam")
         self.paddle = self.loader.loadModel("models/paddle.bam")
@@ -94,38 +80,15 @@ class VisionSim(SimBase):
             # self.brain.applyMask()
             print(self.brain.weights)
 
-    def update(self, task):
+    def updateProcedures(self):
+        self.simUpdate()
+        self.testingProcedure()
 
-        frameTime = globalClock.getDt()
-        # self.dt = frameTime
-        steps = 1
-        if(not self.realTime):
-            self.simPrintTimer += frameTime
-
-            if self.simPrintTimer>5:
-                self.simPrintTimer = 0
-                print("Sim Steps per sec:", str(round(self.simSteps/frameTime)))
-                print("Timefactor:" + str(round((self.simSteps/frameTime)*self.dt)))
-                
-            if(frameTime>1/20):
-                self.simSteps-=10
-            elif(frameTime<1/40):
-                self.simSteps+=10
-
-            steps = self.simSteps
-
-        for i in range(steps):
-
-            self.simUpdate()
-            # self.simpleEvolutionProcedure()
-            # self.popEvolveProcedure()
-            self.testingProcedure()
-            # self.diffEvolveProcedure()
+        
 
 
                        
-               
-        return task.cont
+        
 
 
     def simUpdate(self):
