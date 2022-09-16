@@ -24,10 +24,8 @@ class SimBase(ShowBase):
         self.world.setDebugNode(debugNP.node())
         dlight = DirectionalLight('sun')
         dlight.color = (4,4,4,1)
-        dlnp = self.render.attachNewNode(dlight)
-        dlnp.setPos(10,0,10)
-        dlnp.lookAt(0,0,0)
-        self.render.setLight(dlnp)
+        self.dlnp = self.render.attachNewNode(dlight)
+        self.render.setLight(self.dlnp)
         self.cam.setPos(0,0,30)
         self.cam.lookAt(0,0,0)
         self.simSteps = 10
