@@ -8,8 +8,8 @@ class CTRNN:
         self.size = size
         self.potentials = numpy.zeros(size)
         self.weights = (numpy.random.rand(size,size)-0.5)
-        self.bias = numpy.zeros(size)
-        self.timescale = numpy.full(size,0.5)
+        self.bias = (numpy.random.rand(size)-0.5)
+        self.timescale = (numpy.full(size,0.5))
         self.mask = numpy.full((size,size),1.0)
         self.weightRange = weightRange
         self.biasRange = biasRange
@@ -42,12 +42,15 @@ class CTRNN:
         sigmoided = (self.sigmoid(sigmoidInput)-0.5)*2
         matmuled = numpy.matmul(self.weights, sigmoided)
         delta = self.timescale*(inputArray - self.potentials + matmuled)
-        # print("--")
-        # print(sigmoidInput)
-        # print(sigmoided)
-        # print(matmuled)
-        # print(delta)
-        # print("--")
+        # if(numpy.isnan(delta).any()):
+
+        #     print("--")
+        #     print(sigmoidInput)
+        #     print(sigmoided)
+        #     print(matmuled)
+        #     print(delta)
+        #     print("--")
+        #     delta = numpy.zeros(inputArray.size)
         self.potentials += delta
         return self.potentials
 
@@ -102,7 +105,7 @@ class CTRNN:
         
         newBrain.weights = (donor1.weights + F*(donor2.weights - donor3.weights)).clip(-1*newBrain.weightRange,newBrain.weightRange)
         newBrain.bias = (donor1.bias + F*(donor2.bias - donor3.bias)).clip(-1*newBrain.biasRange,newBrain.biasRange)
-        newBrain.timescale = donor1.timescale + F*(donor2.timescale - donor3.timescale)
+        newBrain.timescale = donor1.timescale + F*(donor2.timescale - donor3.timescale).clip(0.1,1)
 
         for i in range(newBrain.size):
             for j in range(newBrain.size):

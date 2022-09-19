@@ -19,16 +19,16 @@ class paddleBot(SimBase):
         self.brainSize = 10
         self.numDrops = 20
         self.paddleSize = 0.5
-        self.maxGen = 200
+        self.maxGen = 300
         self.mut = 1
         self.crossRate = 0.5
-        self.numTrials = 30
+        self.numTrials = 300
         self.saveBrain = True
         self.retrieveBrain = False
         self.maxPop = 10
 
         mask = np.ones((self.brainSize,self.brainSize))
-        # mask[-3,:6] = 1
+        mask[-3,:6] = 1
         mask[-2,:6] = 1
         mask[-1,:6] = 1
 
@@ -36,6 +36,7 @@ class paddleBot(SimBase):
         self.currentScore = 0
         self.bestBrainScore = 0
         self.ballCounter = 0
+        self.energyCounter = 0
         self.gen = 0
         self.currentTrial = 0
         self.individualIndex = 0
@@ -46,17 +47,19 @@ class paddleBot(SimBase):
             newBrain = CTRNN(self.brainSize)
             newBrain.mask = mask
             newBrain.applyMask()
-            self.pop.append([newBrain,0])
+            self.pop.append([newBrain,0,0])
         self.brain = self.pop[self.individualIndex][0]
         self.bestBrain = self.brain
 
 
-        
+        print(self.bestBrain.weights)
+        print(self.bestBrain.bias)
+        print(self.bestBrain.timescale)
         
         
 
         # Logging
-        self.saveName = "Paddle4"
+        self.saveName = "Paddle5"
         self.loadName = "Paddle4"
         self.fitnessTrend = np.zeros(self.numTrials)
         if(self.retrieveBrain == True):
@@ -71,7 +74,7 @@ class paddleBot(SimBase):
         
 
     def setupSim(self):
-        self.cam.setPos(20,-20,20)
+        self.cam.setPos(0,-30,10)
         self.cam.lookAt(0,0,5)
         self.dlnp.setPos(10,-10,10)
         self.dlnp.lookAt(0,0,0)
@@ -104,6 +107,7 @@ class paddleBot(SimBase):
         self.joint2NP.setHpr(self.joint1NP,90,0,0)
         self.currentScore = 0
         self.ballCounter = 0
+        self.energyCounter = 0
         self.resetBall()
 
 
@@ -114,10 +118,19 @@ class paddleBot(SimBase):
         inputArray[4] = self.joint1NP.getP(self.baseNP)
         inputArray[5] = self.joint2NP.getP(self.joint1NP)
 
+        if (np.isnan(inputArray).any()):
+            print("error:", inputArray)
+            inputArray = np.zeros(inputArray.size)
+
+    
         outputArray = self.brain.step(inputArray)
         self.baseNP.setHpr(self.baseNP,self.jointSpeed*outputArray[-3]*self.dt,0,0)
         self.joint1NP.setHpr(self.joint1NP,0,self.jointSpeed*outputArray[-2]*self.dt,0)
         self.joint2NP.setHpr(self.joint2NP,0,self.jointSpeed*outputArray[-1]*self.dt,0)
+        self.energyCounter += (abs(outputArray[-3]) + abs(outputArray[-1])+ abs(outputArray[-2]))*self.dt
+     
+
+        
 
         if(self.joint1NP.getP(self.baseNP) > self.maxJointAngle):
             self.joint1NP.setHpr(self.baseNP,0,self.maxJointAngle,0)
@@ -159,12 +172,15 @@ class paddleBot(SimBase):
             
             if(self.gen == 0 or self.retest):
                 self.pop[self.individualIndex][1] = self.currentScore
+                self.pop[self.individualIndex][2] = self.energyCounter
+
                 
             else:
                 # assume it has just tested the test vector
-                if(self.currentScore > self.pop[self.individualIndex][1]):
+                if(self.currentScore > self.pop[self.individualIndex][1] or (self.currentScore == self.pop[self.individualIndex][1] and self.energyCounter<self.pop[self.individualIndex][2])):
                     self.pop[self.individualIndex][0] = self.brain
                     self.pop[self.individualIndex][1] = self.currentScore
+                
             
             self.individualIndex += 1
 
