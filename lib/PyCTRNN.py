@@ -97,11 +97,11 @@ class CTRNN:
 
     @staticmethod
     def generateDifferentialTestIndividual(trialBrain,donor1,donor2,donor3,F,CR):
-        newBrain = CTRNN(trialBrain.size)
+        newBrain = CTRNN(trialBrain.size,trialBrain.weightRange,trialBrain.biasRange)
         
         
-        newBrain.weights = donor1.weights + F*(donor2.weights - donor3.weights)
-        newBrain.bias = donor1.bias + F*(donor2.bias - donor3.bias)
+        newBrain.weights = (donor1.weights + F*(donor2.weights - donor3.weights)).clip(-1*newBrain.weightRange,newBrain.weightRange)
+        newBrain.bias = (donor1.bias + F*(donor2.bias - donor3.bias)).clip(-1*newBrain.biasRange,newBrain.biasRange)
         newBrain.timescale = donor1.timescale + F*(donor2.timescale - donor3.timescale)
 
         for i in range(newBrain.size):

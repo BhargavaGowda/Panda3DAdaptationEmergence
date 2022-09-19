@@ -1,0 +1,10 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+
+brain = np.loadtxt("results/brains/Size_10_Paddle3_Weights.csv",delimiter=",")
+
+
+plt.imshow(brain, interpolation='nearest', cmap="PiYG")
+
+plt.show()
